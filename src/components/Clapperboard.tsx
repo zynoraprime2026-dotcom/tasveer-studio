@@ -9,6 +9,7 @@ type ClapperboardProps = {
 }
 
 const DIRECTOR = 'ABDULRAHIM ABUBAKAR'
+const ROLL = 'A'
 const FPS = 25
 const CALLS = ['ROLL SOUND', 'CAMERA', 'ACTION'] as const
 
@@ -64,7 +65,7 @@ export function Clapperboard({ scene, takes, title, ratio }: ClapperboardProps) 
           <span className="cb-body">
             <span className="cb-head">
               <span>TASVEER STUDIO</span>
-              <span className="cb-head-right">PROD. {roll}1</span>
+              <span className="cb-head-right">PROD. {ROLL}1</span>
             </span>
             <span className="cb-grid">
               <span className="cb-cell"><i>PRODUCTION</i><b>{production}</b></span>
