@@ -5,6 +5,7 @@ import { downloadProject } from '../projectUtils'
 import { KeyArt } from './KeyArt'
 import { Animate } from './Animate'
 import { Narration } from './Narration'
+import { Clapperboard } from './Clapperboard'
 
 const examplePrompt = 'A cartographer discovers a map that redraws itself every night, leading her toward a city that was erased from history. Atmospheric mystery, vast desert landscapes, warm lantern light.'
 
@@ -103,6 +104,10 @@ export function Studio({ seed, onSave, notify }: StudioProps) {
           <h2>Start with a feeling.<br /><em>Leave with a shot plan.</em></h2>
         </div>
         <p className="section-summary dark-ink">Sketch the spark, choose the visual language, and shape every beat. Storyboards and treatments are built in this browser and cost nothing. This desk is for planning; Director Mode below renders the finished film with voice-over, music and the cut.</p>
+      </div>
+
+      <div className="page-gutter">
+        <Clapperboard scene={activeScene + 1} takes={scenes.length} title={title} ratio={ratio} />
       </div>
 
       <div className="studio-workspace page-gutter">
