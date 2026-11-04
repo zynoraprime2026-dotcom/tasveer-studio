@@ -90,9 +90,11 @@ type Validated =
 export function upstreamPath(action: StudioAction, payload: Record<string, string | number>): string {
   const movieId = String(payload.movie_id ?? payload.series_id ?? '')
   switch (action) {
+    case 'movie-reshoot':
+      // the service spells this route with a hyphen: /reshoot is a 404
+      return `/v1/movie/${movieId}/re-shoot`
     case 'movie-status':
     case 'movie-suggestions':
-    case 'movie-reshoot':
     case 'movie-assemble':
     case 'movie-cast':
     case 'movie-package':
