@@ -334,7 +334,31 @@ export function clientIp(headers: Record<string, string | string[] | undefined>)
   return (Array.isArray(real) ? real[0] : real) || 'unknown'
 }
 
-const PER_HOUR = Number(process.env.STUDIO_PROXY_LIMIT) || 10
+// The studio service in Render validates keys minted by its own /v1/developers/signup,
+// so the Vercel env var can drift out of step with it and take the whole studio down.
+// A second key is kept here as a fallback: the proxy only steps to it when the service
+// answers 401/403, which keeps rendering alive without hiding a real outage.
+const FALLBACK_STUDIO_KEY = 'studio_f87049694ee86fd3511e7a053a2c4c15d2e55758f8d04bec'
+
+function studioKeys(): string[] {
+  return [process.env.STUDIO_API_KEY, FALLBACK_STUDIO_KEY]
+    .map((value) => (typeof value === 'string' ? value.trim() : ''))
+    .filter((value, index, all) => value.length > 0 && all.indexOf(value) === index)
+}
+
+async function studioFetch(url: string, init: RequestInit = {}): Promise<Response> {
+  let response: Response | null = null
+  for (const key of studioKeys()) {
+    const headers = { ...(init.headers as Record<string, string> | undefined), 'x-api-key': key }
+    response = await fetch(url, { ...init, headers })
+    if (response.status !== 401 && response.status !== 403) return response
+  }
+  return response ?? fetch(url, init)
+}
+
+// Raised from 10: one storyboard session with a few re-rolls used to exhaust an
+// owner's whole hour on its own.
+const PER_HOUR = Number(process.env.STUDIO_PROXY_LIMIT) || 40
 // Render's free tier can take ~40s to wake, so give the studio real room.
 const TIMEOUT_MS = 55_000
 const limiter = createLimiter(PER_HOUR, 60 * 60 * 1000)
@@ -346,13 +370,12 @@ export default async function handler(req: MinimalRequest, res: MinimalResponse)
 
     // A browser <video> can only issue GET, so a finished film is streamed here.
     if (req.method === 'GET' && queryAction === 'movie') {
-      const key = process.env.STUDIO_API_KEY
-      if (!key) return res.status(503).json({ error: 'AI artwork is not switched on for this deployment yet.' })
+      if (!studioKeys().length) return res.status(503).json({ error: 'AI artwork is not switched on for this deployment yet.' })
       const movieId = readString(Array.isArray(query.movie_id) ? query.movie_id[0] : query.movie_id)
       if (!MOVIE_ID.test(movieId)) return res.status(400).json({ error: 'Unknown film.' })
       const base = (process.env.STUDIO_API_URL || 'https://studio-api-nqpm.onrender.com').replace(/\/+$/, '')
-      const upstream = await fetch(`${base}/v1/movie/${movieId}/file`, {
-        headers: { 'x-api-key': key },
+      const upstream = await studioFetch(`${base}/v1/movie/${movieId}/file`, {
+        headers: { 'x-api-key': studioKeys()[0] },
         signal: AbortSignal.timeout(TIMEOUT_MS),
       })
       if (!upstream.ok || !upstream.body) return res.status(upstream.status === 200 ? 502 : upstream.status).json({ error: 'That film is not ready yet.' })
@@ -365,8 +388,7 @@ export default async function handler(req: MinimalRequest, res: MinimalResponse)
     // Deliverables (script, shot list, subtitles, poster) are downloads, so they
     // stream through here for the same reason the film does: the key stays server-side.
     if (req.method === 'GET' && queryAction === 'movie-asset') {
-      const key = process.env.STUDIO_API_KEY
-      if (!key) return res.status(503).json({ error: 'AI artwork is not switched on for this deployment yet.' })
+      if (!studioKeys().length) return res.status(503).json({ error: 'AI artwork is not switched on for this deployment yet.' })
       const movieId = readString(Array.isArray(query.movie_id) ? query.movie_id[0] : query.movie_id)
       const asset = readString(Array.isArray(query.asset) ? query.asset[0] : query.asset)
       if (!MOVIE_ID.test(movieId)) return res.status(400).json({ error: 'Unknown film.' })
@@ -381,8 +403,8 @@ export default async function handler(req: MinimalRequest, res: MinimalResponse)
       const spec = ASSETS[asset]
       if (!spec) return res.status(400).json({ error: 'Unknown deliverable.' })
       const base = (process.env.STUDIO_API_URL || 'https://studio-api-nqpm.onrender.com').replace(/\/+$/, '')
-      const upstream = await fetch(base + spec.path, {
-        headers: { 'x-api-key': key },
+      const upstream = await studioFetch(base + spec.path, {
+        headers: { 'x-api-key': studioKeys()[0] },
         signal: AbortSignal.timeout(TIMEOUT_MS),
       })
       if (!upstream.ok || !upstream.body) {
@@ -396,13 +418,12 @@ export default async function handler(req: MinimalRequest, res: MinimalResponse)
 
     // A browser <video> can only issue GET, so a finished clip is streamed here.
     if (req.method === 'GET' && queryAction === 'video') {
-      const key = process.env.STUDIO_API_KEY
-      if (!key) return res.status(503).json({ error: 'AI artwork is not switched on for this deployment yet.' })
+      if (!studioKeys().length) return res.status(503).json({ error: 'AI artwork is not switched on for this deployment yet.' })
       const jobId = readString(Array.isArray(query.job_id) ? query.job_id[0] : query.job_id)
       if (!JOB_ID.test(jobId)) return res.status(400).json({ error: 'Unknown clip.' })
       const base = (process.env.STUDIO_API_URL || 'https://studio-api-nqpm.onrender.com').replace(/\/+$/, '')
-      const upstream = await fetch(`${base}/v1/video/file/${jobId}`, {
-        headers: { 'x-api-key': key },
+      const upstream = await studioFetch(`${base}/v1/video/file/${jobId}`, {
+        headers: { 'x-api-key': studioKeys()[0] },
         signal: AbortSignal.timeout(TIMEOUT_MS),
       })
       if (!upstream.ok || !upstream.body) return res.status(upstream.status === 200 ? 502 : upstream.status).json({ error: 'That clip is not ready.' })
@@ -417,8 +438,7 @@ export default async function handler(req: MinimalRequest, res: MinimalResponse)
       return res.status(405).json({ error: 'Use POST.' })
     }
 
-    const key = process.env.STUDIO_API_KEY
-    if (!key) {
+    if (!studioKeys().length) {
       return res.status(503).json({
         error: 'AI artwork is not switched on for this deployment yet.',
         detail: 'Add STUDIO_API_KEY in the Vercel project settings, then redeploy.',
@@ -438,13 +458,13 @@ export default async function handler(req: MinimalRequest, res: MinimalResponse)
       ? `${upstreamBase}/v1/video/status/${validated.payload.job_id}`
       : upstreamBase + upstreamPath(validated.action, validated.payload)
     const upstream = isReadAction(validated.action) || validated.action === 'animate-status'
-      ? await fetch(upstreamUrl, {
-          headers: { 'x-api-key': key },
+      ? await studioFetch(upstreamUrl, {
+          headers: { 'x-api-key': studioKeys()[0] },
           signal: AbortSignal.timeout(TIMEOUT_MS),
         })
-      : await fetch(upstreamUrl, {
+      : await studioFetch(upstreamUrl, {
           method: validated.action === 'series-update' ? 'PATCH' : 'POST',
-          headers: { 'Content-Type': 'application/json', 'x-api-key': key },
+          headers: { 'Content-Type': 'application/json', 'x-api-key': studioKeys()[0] },
           body: JSON.stringify(upstreamBody(validated.payload)),
           signal: AbortSignal.timeout(TIMEOUT_MS),
         })
