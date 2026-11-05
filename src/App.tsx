@@ -82,7 +82,7 @@ export default function App() {
 
   const scrollToStudio = useCallback(() => {
     setMobileOpen(false)
-    document.getElementById('studio')?.scrollIntoView({ behavior: 'smooth' })
+    document.getElementById('films')?.scrollIntoView({ behavior: 'smooth' })
   }, [])
 
   const saveProject = (project: Project) => {
@@ -118,11 +118,12 @@ export default function App() {
 
   return (
     <div className="app-shell">
-      <a className="skip-link" href="#studio">Skip to studio</a>
+      <a className="skip-link" href="#films">Skip to studio</a>
       <header className={`site-header ${scrolled || mobileOpen ? 'header-solid' : ''}`}>
         <a href="#home" className="brand-link" onClick={closeMobile}><Brand /></a>
         <nav className="desktop-nav" aria-label="Primary navigation">
-          <a href="#studio">Create</a>
+          <a href="#films">Create</a>
+          <a href="#studio">Desk</a>
           <a href="#explore">Collection</a>
           <a href="#films">Films <span>{filmCount === null ? '—' : filmCount.toString().padStart(2, '0')}</span></a>
           <a href="#my-films">Drafts <span>{projects.length.toString().padStart(2, '0')}</span></a>
@@ -138,8 +139,9 @@ export default function App() {
 
       {mobileOpen && (
         <nav className="mobile-nav" id="mobile-navigation" aria-label="Mobile navigation">
-          <a href="#studio" onClick={closeMobile}>Create <span>01</span></a>
-          <a href="#explore" onClick={closeMobile}>Collection <span>02</span></a>
+          <a href="#films" onClick={closeMobile}>Create <span>01</span></a>
+          <a href="#studio" onClick={closeMobile}>Desk <span>02</span></a>
+          <a href="#explore" onClick={closeMobile}>Collection <span>03</span></a>
           <a href="#films" onClick={closeMobile}>Films <span>{filmCount === null ? '—' : filmCount.toString().padStart(2, '0')}</span></a>
           <a href="#my-films" onClick={closeMobile}>Drafts <span>{projects.length.toString().padStart(2, '0')}</span></a>
           <p>Ideas in. Cinema out.</p>
@@ -148,10 +150,10 @@ export default function App() {
 
       <main>
         <Hero onStart={scrollToStudio} />
-        <Studio key={studioSession} seed={studioSeed} onSave={saveProject} notify={notify} />
         <Suspense fallback={<SectionFallback label="director" />}>
           <Director notify={notify} onFilms={setFilmCount} />
         </Suspense>
+        <Studio key={studioSession} seed={studioSeed} onSave={saveProject} notify={notify} />
         <Suspense fallback={<SectionFallback label="collection" />}>
           <Explore onSelect={setSelectedFilm} />
         </Suspense>

@@ -10,7 +10,7 @@ import { Clapperboard } from './Clapperboard'
 const examplePrompt = 'A cartographer discovers a map that redraws itself every night, leading her toward a city that was erased from history. Atmospheric mystery, vast desert landscapes, warm lantern light.'
 
 const styles = ['Science fiction', 'Neo-noir', 'Fantasy', 'Dance drama', 'Adventure']
-const ratios = ['16:9', '9:16', '1:1']
+const ratios = ['9:16', '16:9', '1:1']
 
 type StudioProps = {
   seed: StudioSeed | null
@@ -22,7 +22,7 @@ export function Studio({ seed, onSave, notify }: StudioProps) {
   const [title, setTitle] = useState(seed?.title ?? '')
   const [prompt, setPrompt] = useState(seed?.prompt ?? '')
   const [style, setStyle] = useState(seed?.style && styles.includes(seed.style) ? seed.style : 'Science fiction')
-  const [ratio, setRatio] = useState(seed?.ratio ?? '16:9')
+  const [ratio, setRatio] = useState(seed?.ratio ?? '9:16')
   const [duration, setDuration] = useState(seed?.duration ?? 12)
   const [scenes, setScenes] = useState<Scene[]>(() => seed?.scenes ?? createScenes('', seed?.style ?? 'Science fiction', seed?.duration ?? 12))
   const [activeScene, setActiveScene] = useState(0)
