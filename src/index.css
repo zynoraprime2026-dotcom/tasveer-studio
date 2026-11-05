@@ -2093,3 +2093,11 @@ input:disabled {
 }
 @keyframes suggestion-land { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
 .series-bible { scroll-behavior: smooth; }
+
+/* the shortcut under the draft button: same size, quieter, and it says what it skips */
+.director-button-quick {
+  margin-top: 0.5rem;
+  background: transparent;
+  border: 1px solid currentColor;
+}
+.director-button-quick:hover { opacity: 0.85; }
