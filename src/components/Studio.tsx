@@ -19,12 +19,12 @@ type StudioProps = {
 }
 
 export function Studio({ seed, onSave, notify }: StudioProps) {
-  const [title, setTitle] = useState(seed?.title ?? 'The Memory Cartographer')
-  const [prompt, setPrompt] = useState(seed?.prompt ?? examplePrompt)
+  const [title, setTitle] = useState(seed?.title ?? '')
+  const [prompt, setPrompt] = useState(seed?.prompt ?? '')
   const [style, setStyle] = useState(seed?.style && styles.includes(seed.style) ? seed.style : 'Science fiction')
   const [ratio, setRatio] = useState(seed?.ratio ?? '16:9')
   const [duration, setDuration] = useState(seed?.duration ?? 12)
-  const [scenes, setScenes] = useState<Scene[]>(() => seed?.scenes ?? createScenes(seed?.prompt ?? examplePrompt, seed?.style ?? 'Science fiction', seed?.duration ?? 12))
+  const [scenes, setScenes] = useState<Scene[]>(() => seed?.scenes ?? createScenes('', seed?.style ?? 'Science fiction', seed?.duration ?? 12))
   const [activeScene, setActiveScene] = useState(0)
   const [building, setBuilding] = useState(false)
   const [playing, setPlaying] = useState(false)
@@ -114,14 +114,14 @@ export function Studio({ seed, onSave, notify }: StudioProps) {
         <div className="studio-form-panel">
           <div className="field-group">
             <label htmlFor="film-title">FILM TITLE</label>
-            <input id="film-title" value={title} onChange={(event) => { setTitle(event.target.value); setSaved(false) }} maxLength={70} />
+            <input id="film-title" value={title} onChange={(event) => { setTitle(event.target.value); setSaved(false) }} maxLength={70} placeholder="The Memory Cartographer" />
           </div>
           <div className="field-group">
             <div className="field-label-row">
               <label htmlFor="film-prompt">YOUR STORY SPARK</label>
               <span>{prompt.length}/600</span>
             </div>
-            <textarea id="film-prompt" value={prompt} onChange={(event) => { setPrompt(event.target.value.slice(0, 600)); setSaved(false) }} rows={6} placeholder="A character, a place, a change…" />
+            <textarea id="film-prompt" value={prompt} onChange={(event) => { setPrompt(event.target.value.slice(0, 600)); setSaved(false) }} rows={6} placeholder={examplePrompt} />
           </div>
           <div className="field-group">
             <label htmlFor="film-style">VISUAL LANGUAGE</label>
