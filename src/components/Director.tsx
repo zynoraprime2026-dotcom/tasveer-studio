@@ -4,6 +4,7 @@ import {
   ACTIVE_MOVIE_STATUSES,
   assembleMovie,
   createMovieFromDraft,
+  quickFilm,
   createSeries,
   cutTrailer,
   cutVertical,
@@ -196,6 +197,30 @@ export function Director({ notify, onFilms }: DirectorProps) {
       notify(`${next.scenes.length} shots drafted. Nothing has been rendered yet.`)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'The studio could not draft that shot list.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  // One tap for the times you already know the film you want: the studio drafts the
+  // shots and starts the render in a single call, no review screen in between.
+  const makeItNow = async () => {
+    if (prompt.trim().length < 24) {
+      setError('Give the director a little more story: at least 24 characters.')
+      return
+    }
+    setError('')
+    setBusy(true)
+    try {
+      localStorage.setItem('studio.quality', quality)
+      const started = await quickFilm({ prompt: prompt.trim(), quality, aspectRatio: ratio, scenes: shotCount })
+      void getUsage().then(setUsage).catch(() => undefined)
+      setStage('film')
+      setDraft(null)
+      setMovie({ id: started.movie_id, title: title.trim() || 'Untitled film', status: 'queued', progress: 0, step: null, error: null, assemblyStale: false, continuity: 'chained', scenes: [] })
+      notify('Making the film: shots, voice, cut and your card, usually inside a minute.')
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'The studio could not start that film.')
     } finally {
       setBusy(false)
     }
@@ -444,8 +469,11 @@ export function Director({ notify, onFilms }: DirectorProps) {
               <button type="button" className="director-button" onClick={writeDraft} disabled={busy}>
                 {busy ? <><Loader2 size={17} className="spin" /> Drafting shots…</> : <><Wand2 size={17} /> Draft the shot list</>}
               </button>
+              <button type="button" className="director-button director-button-quick" onClick={makeItNow} disabled={busy}>
+                {busy ? <><Loader2 size={17} className="spin" /> Working…</> : <><Clapperboard size={17} /> Make it now</>}
+              </button>
               <p className="director-note">
-                DRAFT COSTS {usage?.draft_cost ?? 1} {usage?.draft_cost === 1 ? 'USE' : 'USES'} · NOTHING RENDERS UNTIL YOU APPROVE THE SHOTS
+                DRAFT COSTS {usage?.draft_cost ?? 1} {usage?.draft_cost === 1 ? 'USE' : 'USES'} · NOTHING RENDERS UNTIL YOU APPROVE THE SHOTS · MAKE IT NOW SKIPS THE REVIEW AND RENDERS AT {quality.toUpperCase()} ({renderCost} USES)
               </p>
             </div>
 

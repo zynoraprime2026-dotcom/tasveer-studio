@@ -266,6 +266,12 @@ export async function draftMovie(input: DraftRequest): Promise<MovieDraft> {
 /** Renders the shot list a person has just reviewed. Nothing renders before this. */
 export type FilmQuality = 'storyboard' | 'standard' | 'high'
 
+/** One prompt, one film: the studio drafts the shots and starts the render in the
+ * same call, so a user who already knows what they want never sees the review screen. */
+export async function quickFilm(input: { prompt: string; quality?: string; aspectRatio?: string; scenes?: number; language?: string }): Promise<{ movie_id: string; quality?: string; shot_list?: { visualPrompt: string; narrationText: string }[] }> {
+  return post<{ movie_id: string; quality?: string; shot_list?: { visualPrompt: string; narrationText: string }[] }>({ action: 'film', ...input })
+}
+
 export async function createMovieFromDraft(
   draftId: string,
   scenes: Pick<MovieDraftScene, 'visualPrompt' | 'narrationText' | 'duration'>[],

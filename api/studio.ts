@@ -24,6 +24,7 @@ const ALLOWED_ACTIONS = [
   'animate',
   'animate-status',
   'draft',
+  'film',
   'movie-create',
   'movie-status',
   'movie-suggestions',
@@ -50,6 +51,7 @@ const METERED_ACTIONS: StudioAction[] = [
   'content',
   'animate',
   'draft',
+  'film',
   'movie-create',
   'movie-reshoot',
   'movie-assemble',
@@ -63,11 +65,12 @@ const MAX_DIMENSION = 1536
 const MAX_PROMPT = 1200
 const MAX_TOPIC = 300
 
-const PATHS: Record<'image' | 'content' | 'animate' | 'draft' | 'movie-create', string> = {
+const PATHS: Record<'image' | 'content' | 'animate' | 'draft' | 'film' | 'movie-create', string> = {
   image: '/v1/image/generate',
   content: '/v1/content/generate',
   animate: '/v1/video/image-to-video',
   draft: '/v1/movie/draft',
+  film: '/v1/film',
   'movie-create': '/v1/movie/create',
 }
 
@@ -120,6 +123,7 @@ export function upstreamPath(action: StudioAction, payload: Record<string, strin
     case 'content':
     case 'animate':
     case 'draft':
+    case 'film':
     case 'movie-create':
       return PATHS[action]
     default:
