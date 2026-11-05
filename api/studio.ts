@@ -369,6 +369,13 @@ const PER_HOUR = Number(process.env.STUDIO_PROXY_LIMIT) || 40
 const TIMEOUT_MS = 55_000
 const limiter = createLimiter(PER_HOUR, 60 * 60 * 1000)
 
+function headerValue(req: MinimalRequest, name: string): string | undefined {
+  const headers = (req.headers ?? {}) as Record<string, string | string[] | undefined>
+  const raw = headers[name] ?? headers[name.toLowerCase()]
+  const value = Array.isArray(raw) ? raw[0] : raw
+  return value ? String(value) : undefined
+}
+
 export default async function handler(req: MinimalRequest, res: MinimalResponse) {
   try {
     const query = req.query ?? {}
@@ -380,12 +387,21 @@ export default async function handler(req: MinimalRequest, res: MinimalResponse)
       const movieId = readString(Array.isArray(query.movie_id) ? query.movie_id[0] : query.movie_id)
       if (!MOVIE_ID.test(movieId)) return res.status(400).json({ error: 'Unknown film.' })
       const base = (process.env.STUDIO_API_URL || 'https://studio-api-nqpm.onrender.com').replace(/\/+$/, '')
+      // a <video> asks for ranges; dropping the request header makes the player wait
+      // for the whole file, which is the spinner that never resolves on a phone
+      const wantRange = headerValue(req, 'range')
       const upstream = await studioFetch(`${base}/v1/movie/${movieId}/file`, {
-        headers: { 'x-api-key': studioKeys()[0] },
+        headers: { 'x-api-key': studioKeys()[0], ...(wantRange ? { Range: wantRange } : {}) },
         signal: AbortSignal.timeout(TIMEOUT_MS),
       })
       if (!upstream.ok || !upstream.body) return res.status(upstream.status === 200 ? 502 : upstream.status).json({ error: 'That film is not ready yet.' })
+      if (upstream.status === 206) res.status(206)
+      for (const name of ['content-type', 'content-length', 'content-range', 'accept-ranges', 'content-disposition']) {
+        const value = upstream.headers.get(name)
+        if (value) res.setHeader(name, value)
+      }
       res.setHeader('Content-Type', upstream.headers.get('content-type') || 'video/mp4')
+      res.setHeader('Accept-Ranges', upstream.headers.get('accept-ranges') || 'bytes')
       res.setHeader('Cache-Control', 'public, max-age=3600')
       Readable.fromWeb(upstream.body as Parameters<typeof Readable.fromWeb>[0]).pipe(res as unknown as NodeJS.WritableStream)
       return
