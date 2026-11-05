@@ -217,6 +217,8 @@ export type MovieSceneStatus = {
 
 export type MovieStatus = {
   id: string
+  /** the locked visual identity of each person, reused verbatim across shots and episodes */
+  cast?: { name: string; description: string }[]
   title: string
   status: 'queued' | 'scripting' | 'processing' | 'assembling' | 'done' | 'partial' | 'failed' | string
   progress: number | null

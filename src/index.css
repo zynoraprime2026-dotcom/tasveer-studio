@@ -2101,3 +2101,14 @@ input:disabled {
   border: 1px solid currentColor;
 }
 .director-button-quick:hover { opacity: 0.85; }
+
+/* what the studio locked about each person, shown on the film so it can be trusted */
+.director-locked-cast {
+  margin: 0.75rem 0 1rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 10px;
+}
+.director-locked-cast ul { margin: 0.4rem 0 0.5rem; padding-left: 1.1rem; }
+.director-locked-cast li { margin-bottom: 0.35rem; line-height: 1.45; }
+.director-locked-cast .director-note { margin: 0; opacity: 0.75; }

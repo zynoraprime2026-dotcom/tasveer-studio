@@ -709,6 +709,19 @@ export function Director({ notify, onFilms }: DirectorProps) {
                     {pack.cast.map((c) => `${c.speaker} (${c.lines} ${c.lines === 1 ? 'line' : 'lines'})`).join(' · ')}
                   </p>
                 )}
+                {movie.cast && movie.cast.length > 0 && (
+                  <div className="director-locked-cast">
+                    <span className="field-label">LOOK, LOCKED</span>
+                    <ul>
+                      {movie.cast.map((person) => (
+                        <li key={person.name || person.description}>
+                          <strong>{person.name || 'Lead'}</strong> — {person.description}
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="director-note">Every shot of this film, and every later episode in the series, reuses these descriptions verbatim.</p>
+                  </div>
+                )}
                 <div className="delivery-grid">
                   {pack.deliverables.poster && (
                     <a className="delivery-poster" href={filmAssetUrl(movie.id, 'poster')} download>
